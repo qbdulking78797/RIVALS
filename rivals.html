@@ -1,0 +1,105 @@
+import { Canvas, useFrame } from '@react-three/fiber';
+import { PointerLockControls, Box, Sky } from '@react-three/drei';
+import { useRef, useState, useEffect } from 'react';
+
+function PlayerGun() {
+  return (
+    <mesh position={[0.5, -0.5, -1]}>
+      <boxGeometry args={[0.3, 0.2, 1]} />
+      <meshStandardMaterial color="black" />
+    </mesh>
+  );
+}
+
+function Enemy({ position }) {
+  const ref = useRef();
+
+  useFrame(() => {
+    if (ref.current) {
+      ref.current.rotation.y += 0.01;
+    }
+  });
+
+  return (
+    <Box ref={ref} position={position} args={[1, 2, 1]}>
+      <meshStandardMaterial color="red" />
+    </Box>
+  );
+}
+
+function Arena() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[300, 300]} />
+      <meshStandardMaterial color="#444" />
+    </mesh>
+  );
+}
+
+function Game() {
+  const [fps, setFps] = useState(0);
+  const frameCount = useRef(0);
+  const lastTime = useRef(performance.now());
+
+  useFrame(() => {
+    frameCount.current++;
+    const now = performance.now();
+
+    if (now - lastTime.current >= 1000) {
+      setFps(frameCount.current);
+      frameCount.current = 0;
+      lastTime.current = now;
+    }
+  });
+
+  return (
+    <>
+      <Sky sunPosition={[100, 20, 100]} />
+      <ambientLight intensity={1} />
+      <directionalLight position={[10, 20, 10]} intensity={2} castShadow />
+
+      <Arena />
+
+      <Enemy position={[0, 1, -10]} />
+      <Enemy position={[5, 1, -20]} />
+      <Enemy position={[-5, 1, -15]} />
+
+      <PlayerGun />
+
+      <PointerLockControls />
+
+      <HtmlUI fps={fps} />
+    </>
+  );
+}
+
+function HtmlUI({ fps }) {
+  return (
+    <div className="absolute top-0 left-0 w-full h-full pointer-events-none text-white">
+      <div className="absolute top-4 left-4 bg-black/50 px-4 py-2 rounded-xl">
+        <h1 className="text-2xl font-bold">⚔ FPS Arena</h1>
+        <p>FPS: {fps}</p>
+        <p>Target: 120 FPS</p>
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-4xl">
+        +
+      </div>
+    </div>
+  );
+}
+
+export default function FPSArenaGame() {
+  useEffect(() => {
+    document.body.style.margin = 0;
+  }, []);
+
+  return (
+    <div className="w-screen h-screen bg-black overflow-hidden">
+      <Canvas shadows camera={{ position: [0, 2, 5], fov: 75 }}>
+        <Game />
+      </Canvas>
+    </div>
+  );
+}
+
